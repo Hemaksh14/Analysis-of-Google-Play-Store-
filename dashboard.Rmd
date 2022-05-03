@@ -1,0 +1,381 @@
+---
+title: "Google Play Store"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: 
+      version: 4
+      bootswatch: cyborg
+---
+
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(ggplot2)
+library(plotly)
+library(forcats)
+library(tidyverse)
+library(RColorBrewer)
+data = read.csv("D:/Google playstore Project/dataset/Google-Playstore.csv")
+Ratingbins<-data$Rating
+cut(Ratingbins,4,labels = c("1-2","2-3","3-4","4-5"))
+data$Ratingbins<-cut(Ratingbins,4,labels = c("1-2","2-3","3-4","4-5"))
+
+cols<- c(True="#1f4263", False="#4a99d6")
+
+```
+
+
+
+Focus
+=====================================
+
+Column {data-width=200}{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Content Rating
+```{r}
+ #Content Rating
+ggplot(mutate(data, Content.Rating = fct_infreq(Content.Rating))) + 
+    geom_bar(aes(x = Content.Rating, fill = ..count..))+
+  theme(panel.background = element_rect(fill = 'lightblue'))
+```
+
+### Pie Chart 
+
+```{r}
+
+freq<-table(data$Content)
+fr<-as.data.frame(freq)
+fr <- fr %>%
+  arrange(desc(Freq))
+colo<-c("steelblue4", "steelblue", "steelblue3", "steelblue2", "steelblue1", "skyblue1") 
+op <- par(cex = 0.5)
+pielabels <- sprintf("%s = %3.1f%s", fr$Var1,
+                     100*fr$Freq/sum(fr$Freq), "%")
+pie(fr$Freq,
+    labels=NA,
+    clockwise=TRUE,
+    border="black",
+    radius=1,
+    main ="Percentage of Content of Apps",
+    cex.main=2.5,
+    col.main="Blue",
+    col=colo
+)
+legend("topleft",legend=pielabels,bty="n", cex=1.3,fill=colo)
+
+```
+
+
+
+Column {data-width=600}
+-----------------------------------------------------------------------
+
+### Chart Category
+
+```{r}
+#Category
+library(forcats)
+library(tidyverse)
+
+ggplot(mutate(data, Category = fct_infreq(Category))) + 
+  geom_bar(aes(x = Category, fill = ..count..)) +
+  coord_flip()+
+  theme(panel.background = element_rect(fill = 'lightblue'))
+```
+
+
+Column {data-width=200}
+-----------------------------------------------------------------------
+
+### Number of Apps
+
+```{r}
+valueBox(nrow(data))
+```
+
+
+### Education
+
+```{r}
+education = nrow(data[data$Category == "Education",])
+valueBox(education)
+```
+
+
+### Music & Audio
+
+```{r}
+Music = nrow(data[data$Category == "Music & Audio",])
+valueBox(Music)
+```
+
+
+### Tools
+
+```{r}
+Tools = nrow(data[data$Category == "Tools",])
+valueBox(Tools)
+```
+
+
+### Apps rated Everyone
+
+```{r}
+Everyone = nrow(data[data$Content.Rating == "Everyone",])
+valueBox(Everyone)
+```
+
+Category
+=====================================
+Column {data-width=900, .tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Count
+```{r}
+library(forcats)
+library(tidyverse)
+
+ggplot(mutate(data, Category = fct_infreq(Category))) + 
+  geom_bar(aes(x = Category, fill = ..count..)) +
+  coord_flip()+
+  theme(panel.background = element_rect(fill = 'lightblue'))
+```
+
+
+### Ad Supported
+```{r}
+ggplot(data = data, aes(y=Category, fill= Ad.Supported)) +
+  geom_bar() +
+  theme(panel.background = element_rect(fill = 'lightblue'))+
+   scale_fill_manual(values = cols) 
+```
+
+
+### Free
+```{r}
+ggplot(data = data, aes(y=Category, fill= Free)) + 
+  geom_bar() +
+  theme(panel.background = element_rect(fill = 'lightblue'))+
+  scale_fill_manual(values = cols) 
+```
+
+<!-- ### Rating {.tabset .tabset-fade} -->
+<!-- ```{r} -->
+<!-- ggplot(data = data, aes(x=Rating, fill= Category)) +  -->
+<!--   geom_bar() + -->
+<!--   theme(panel.background = element_rect(fill = 'lightblue')) -->
+<!-- ``` -->
+
+### Editors Choice {.tabset .tabset-fade}
+```{r}
+ggplot(data = data, aes(y=Category, fill=Editors.Choice))+
+  geom_bar()+
+  theme(panel.background = element_rect(fill = 'lightblue'))+
+  scale_fill_manual(values = cols) 
+```
+
+
+
+Column {data-width=200}
+-----------------------------------------------------------------------
+
+
+### Category with most Apps
+
+```{r}
+valueBox("Education")
+```
+
+### Category with most Free Apps
+
+```{r}
+valueBox("Education")
+```
+
+
+### Number of Editors Choice Apps
+
+```{r}
+choice <- nrow(data[data$Editors.Choice == "True",])
+valueBox(choice)
+```
+
+
+### Category with most number of Ads
+
+```{r}
+valueBox("Music & Audio")
+```
+
+
+
+
+
+
+Rating
+=====================================
+Column {data-width=625, .tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Rating Count
+```{r}
+ggplot(data = data, aes(x=Ratingbins, y= Rating.Count)) + 
+  geom_bar(stat='identity',fill='#1f4263') +
+  theme(panel.background = element_rect(fill = 'lightblue'))
+```
+
+<!-- ### Category -->
+<!-- ```{r} -->
+<!-- ggplot(data = data, aes(x=Rating, fill= Category)) +  -->
+<!--   geom_bar() + -->
+<!--   theme(panel.background = element_rect(fill = 'lightblue')) -->
+<!-- ``` -->
+
+### PMF and CMF {.tabset .tabset-fade}
+```{r}
+  Log_Installs <- log(data$Minimum.Installs)
+ 
+  rating_prob <- data %>%
+    group_by(Ratingbins) %>%
+    summarise(Log_Installs = n()) %>% 
+    mutate(pmf = Log_Installs/sum(Log_Installs)) %>% #PMF
+    mutate(cdf = cumsum(pmf)) #CDF
+  
+
+  plot_rating<- ggplot(rating_prob, aes(x=Ratingbins,y=Log_Installs)) +
+    geom_point()+xlab("Ratings ")+
+    geom_point()+ylab("Installs")+
+  theme(panel.background = element_rect(fill = 'lightblue'))
+  plot_rating
+```
+
+
+```
+
+
+### Content Rating {.tabset .tabset-fade}
+```{r}
+p1<- ggplot(data = data, aes(x=Rating, fill= Content.Rating)) + 
+  geom_bar() +
+  theme(panel.background = element_rect(fill = 'lightblue'))
+
+ggplotly(p1)
+```
+
+
+Column {data-width=375}
+-----------------------------------------------------------------------
+
+### Ad Supported in various Rating-bins
+
+```{r}
+ggplot(data = data, aes(x=Ratingbins, fill= Ad.Supported)) + 
+  geom_bar(position='dodge') +
+  theme(panel.background = element_rect(fill = 'lightblue'))+
+  scale_fill_manual(values = cols) 
+```
+
+
+### Average Rating
+
+```{r}
+
+average <- mean(data$Rating,na.rm = TRUE)
+valueBox(average)
+```
+
+
+
+
+Additional Knowledge
+=====================================
+Column {data-width=625, .tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Free
+```{r}
+ boxplot <-ggplot(data = data)+geom_boxplot(mapping =aes(x = Free, y = Log_Installs, fill = Free,)) + labs(title="Total Installs(log) by the Type of Application")+ 
+    ylab("Total Installs")+ xlab("Application Type") +
+  theme(panel.background = element_rect(fill = 'lightblue'))+
+  scale_fill_manual(values = cols) 
+  boxplot
+```
+
+### Free vs Count {.tabset .tabset-fade}
+```{r}
+    ggplot(data = data)+ geom_bar(mapping =aes(x = Free),color = 'black', fill = '#1f4263')+xlab('Free')+ 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+    labs(title= "Number of Free Apps") +
+  theme(panel.background = element_rect(fill = 'lightblue'))+
+  scale_fill_manual(values = cols) 
+```
+
+
+### Free vs Ad supported{.tabset .tabset-fade}
+```{r}
+ggplot(data = data, aes(x=Free, fill= Ad.Supported)) + 
+  geom_bar() +
+  theme(panel.background = element_rect(fill = 'lightblue'))+
+  scale_fill_manual(values = cols) 
+```
+
+
+### Histogram Distribution of Price
+
+```{r}
+ggplot(data,aes(x=Price))+
+  geom_histogram(fill="navyblue",col="black",binwidth = 100)+
+  xlab("Price")+
+  theme(panel.background = element_rect(fill = 'lightblue'))
+```
+
+### Ad supported
+
+```{r}
+ggplot(mutate(data, Ad.Supported = fct_infreq(Ad.Supported))) + 
+    geom_bar(aes(x = Ad.Supported, fill = ..count..))+
+  theme(panel.background = element_rect(fill = 'lightblue'))
+
+```
+
+### Editors Choice
+
+```{r}
+ggplot(mutate(data, Editors.Choice = fct_infreq(Editors.Choice))) + 
+    geom_bar(aes(x = Editors.Choice, fill = ..count..))+
+  theme(panel.background = element_rect(fill = 'lightblue'))
+```
+
+
+Column {data-width=375}
+-----------------------------------------------------------------------
+
+### Free Vs Paid
+
+```{r}
+ggplot(mutate(data, Free = fct_infreq(Free))) + 
+    geom_bar(aes(x = Free, fill = ..count..))+
+  theme(panel.background = element_rect(fill = 'lightblue'))
+```
+
+
+### Number of Apps with no Ads
+
+```{r}
+WithoutAds = data[data$Ad.Supported == "False",]
+valueBox(nrow(WithoutAds))
+```
+
+### Number of Apps with Ads
+
+```{r}
+WithAds = data[data$Ad.Supported == "True",]
+valueBox(nrow(WithAds))
+```
+
+
+
+
